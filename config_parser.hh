@@ -12,9 +12,7 @@ class ConfigFile {
     typedef typename std::map< std::string, KeyValType > SectionType;
 
     bool verbose_;
-
     std::string section_; /* current section during parse */
-
     SectionType sections_;
 
     std::string Strip (const std::string &orig) const;
