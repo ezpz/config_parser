@@ -22,48 +22,9 @@ class ConfigFile {
     std::pair< std::string, std::string > 
         ParseKV (const std::string &line) const;
 
-    void Msg (const char *fmt, ...) const {
-        if (! verbose_) { return; }
-        va_list va;
-        va_start (va, fmt);
-        vfprintf (stdout, fmt, va);
-        va_end (va);
-    }
-
-    void ParseLine (const std::string &line) {
-        std::string sline = Strip(line);
-        if (sline.empty ()) { return; }
-        if ('#' == sline[0] || ';' == sline[0]) { return; }
-        if ('[' == sline[0]) { 
-            std::string sec = ParseSection (sline);
-            if (! sec.empty ()) {
-                Msg ("New section: [%s] => [%s]\n", 
-                        section_.c_str (), sec.c_str ());
-                section_ = sec; 
-            } else {
-                Msg ("Failed to assign new section\n");
-            }
-            return;
-        }
-        std::pair< std::string, std::string > kv = ParseKV (sline);
-        if (kv.first.empty ()) { 
-            Msg ("Failed to assign K=V\n");
-            return; 
-        }
-        Msg ("%s::%s <- '%s'\n", section_.c_str (), 
-                kv.first.c_str (), kv.second.c_str ());
-        sections_[section_][kv.first] = kv.second;
-    }
-
-    void ParseFile (const char *fname) {
-        section_ = "";
-        std::ifstream cfg(fname);
-        std::string line;
-        while (getline (cfg, line)) {
-            Msg ("INPUT: '%s'\n", line.c_str ());
-            ParseLine (line);
-        }
-    }
+    void Msg (const char *fmt, ...) const;
+    void ParseLine (const std::string &line);
+    void ParseFile (const char *fname);
 
 public:
 
@@ -110,6 +71,49 @@ ConfigFile::ParseKV (const std::string &line) const {
     std::string key = sline.substr (0, n);
     std::string value = sline.substr (n + 1);
     return std::make_pair (Strip(key), Strip(value));
+}
+
+void ConfigFile::Msg (const char *fmt, ...) const {
+    if (! verbose_) { return; }
+    va_list va;
+    va_start (va, fmt);
+    vfprintf (stdout, fmt, va);
+    va_end (va);
+}
+
+void ConfigFile::ParseLine (const std::string &line) {
+    std::string sline = Strip(line);
+    if (sline.empty ()) { return; }
+    if ('#' == sline[0] || ';' == sline[0]) { return; }
+    if ('[' == sline[0]) { 
+        std::string sec = ParseSection (sline);
+        if (! sec.empty ()) {
+            Msg ("New section: [%s] => [%s]\n", 
+                    section_.c_str (), sec.c_str ());
+            section_ = sec; 
+        } else {
+            Msg ("Failed to assign new section\n");
+        }
+        return;
+    }
+    std::pair< std::string, std::string > kv = ParseKV (sline);
+    if (kv.first.empty ()) { 
+        Msg ("Failed to assign K=V\n");
+        return; 
+    }
+    Msg ("%s::%s <- '%s'\n", section_.c_str (), 
+            kv.first.c_str (), kv.second.c_str ());
+    sections_[section_][kv.first] = kv.second;
+}
+
+void ConfigFile::ParseFile (const char *fname) {
+    section_ = "";
+    std::ifstream cfg(fname);
+    std::string line;
+    while (getline (cfg, line)) {
+        Msg ("INPUT: '%s'\n", line.c_str ());
+        ParseLine (line);
+    }
 }
 
 std::string ConfigFile::Get (const std::string &sec, const std::string &key) {
