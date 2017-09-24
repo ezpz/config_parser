@@ -14,6 +14,12 @@ int main (int argc, char **argv) {
     std::cout << "Top::key3   : '" << cfg.Get ("Top", "key3") << "'\n";
     std::cout << "Top::key4   : '" << cfg.Get ("Top", "key4") << "'\n";
     std::cout << "Top::key5   : '" << cfg.Get ("Top", "key4") << "'\n";
+    long x = cfg.Get< long >("Number", "x");
+    std::cout << "Number::x   : " << x << "\n";
+    std::vector< long > xs = cfg.Get< std::vector< long > >("Vector", "xs");
+    for (std::string::size_type i = 0; i < xs.size (); ++i) {
+        std::cout << " xs[" << i << "] : " << xs[i] << std::endl;
+    }
     std::cout << "Bottom::key : '" << cfg.Get ("Bottom", "key") << "'" 
         << std::endl;
     return 0;
