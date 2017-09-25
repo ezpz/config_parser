@@ -5,6 +5,8 @@
 #include <fstream>
 #include <map>
 #include <cstdarg>
+#include <cerrno>
+#include <vector>
 
 class ConfigFile {
 
@@ -35,8 +37,11 @@ public:
         ParseFile (fname); 
     }
 
-    std::string Get (const std::string &section, const std::string &key);
-    std::string Get (const std::string &key) { return Get("",key); }
+    template< typename T = std::string >
+    T Get (const std::string &section, const std::string &key);
+
+    template< typename T = std::string >
+    T Get (const std::string &key) { return Get("",key); }
 };
 
 std::string ConfigFile::Strip (const std::string &orig) const {
@@ -114,7 +119,8 @@ void ConfigFile::ParseFile (const char *fname) {
     }
 }
 
-std::string ConfigFile::Get (const std::string &sec, const std::string &key) {
+template< typename T >
+T ConfigFile::Get (const std::string &sec, const std::string &key) {
     SectionType::iterator s = sections_.find (sec);
     if (sections_.end () == s) {
         return "";
@@ -124,6 +130,48 @@ std::string ConfigFile::Get (const std::string &sec, const std::string &key) {
         return "";
     }
     return kv->second;
+}
+
+template< >
+long ConfigFile::Get (const std::string &sec, const std::string &key) {
+    SectionType::iterator s = sections_.find (sec);
+    if (sections_.end () == s) {
+        errno = EINVAL;
+        return -1;
+    }
+    KeyValType::iterator kv = s->second.find (key);
+    if (s->second.end () == kv) {
+        errno = EINVAL;
+        return -1;
+    }
+    return strtol (kv->second.c_str (), NULL, 0);
+}
+
+template< >
+std::vector< long > ConfigFile::Get (const std::string &sec, 
+        const std::string &key) {
+    SectionType::iterator s = sections_.find (sec);
+    if (sections_.end () == s) {
+        errno = EINVAL;
+        return std::vector< long >();
+    }
+    KeyValType::iterator kv = s->second.find (key);
+    if (s->second.end () == kv) {
+        errno = EINVAL;
+        return std::vector< long >();
+    }
+    std::vector< long > xs;
+    std::string c = ",", val = kv->second;
+    std::string::size_type n = 0;
+    while ((n = val.find (c)) != std::string::npos) {
+        std::string token = val.substr (0, n);
+        xs.push_back (strtol (token.c_str (), NULL, 0));
+        val.erase (0, n + 1);
+    }
+    if (! val.empty ()) {
+        xs.push_back (strtol (val.c_str (), NULL, 0));
+    }
+    return xs;
 }
 
 #endif /*CONFIG_PARSER_HH__*/
