@@ -4,9 +4,11 @@
 #include <string>
 #include <fstream>
 #include <map>
+#include <algorithm>
 #include <cstdarg>
 #include <cerrno>
 #include <vector>
+#include <cctype>
 
 class ConfigFile {
 
@@ -130,6 +132,23 @@ T ConfigFile::Get (const std::string &sec, const std::string &key) {
         return "";
     }
     return kv->second;
+}
+
+template< >
+bool ConfigFile::Get (const std::string &sec, const std::string &key) {
+    SectionType::iterator s = sections_.find (sec);
+    if (sections_.end () == s) {
+        errno = EINVAL;
+        return false;
+    }
+    KeyValType::iterator kv = s->second.find (key);
+    if (s->second.end () == kv) {
+        errno = EINVAL;
+        return false;
+    }
+    std::string v = kv->second;
+    std::transform (v.begin (), v.end (), v.begin (), ::toupper);
+    return "TRUE" == v;
 }
 
 template< >
