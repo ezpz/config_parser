@@ -22,5 +22,10 @@ int main (int argc, char **argv) {
     }
     std::cout << "Bottom::key : '" << cfg.Get ("Bottom", "key") << "'" 
         << std::endl;
+    if (cfg.Get< bool > ("Bool", "y")) {
+        std::cout << "Bool::y   : true" << std::endl;
+    } else {
+        std::cout << "Bool::y   : false" << std::endl;
+    }
     return 0;
 }
